@@ -1,5 +1,7 @@
 # KenLM
 
+Add training data in data/wiki.txt.
+
 ## Install dependencies
 Install SentencePiece encoder and KenLM binaries ->  make install
 
