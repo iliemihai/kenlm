@@ -89,17 +89,6 @@ class DocLM:
         summ.append(f"Processed {self.n_lines:_} lines in {h:.2}h ({s:.1} lines/s).")
         return summ
 
-# test SP
-#model_sp_path = "data/lm_sp/ro.sp.model"
-#doc = {"text": "A fost odata ca niciodata, si de n-ar fi fost, nu s-ar povesti."}
-#sp = SentencePiece(model=model_sp_path, field="text")
-#doc = sp.do(doc)
-#model_lm_path = "data/lm_sp/ro.arpa.bin"
-#lm = DocLM(model=model_lm_path, field="tokenized")
-#ret = lm.do(doc)
-#print(ret)
-
-
 class SentenceLM(DocLM):
     """ Returns score for each individual sentence in paragraphs"""
     def do(self, document: dict) -> Optional[str]:
@@ -117,15 +106,6 @@ class SentenceLM(DocLM):
         document[self.output_field] = pp(log_score, length)
 
         return document#"\n".join(sentences)
-
-#model_sp_path = "data/lm_sp/ro.sp.model"
-#doc = {"text": "A fost~~~~odata ~==== ca niciodata, si de.................!!!!!!!!!!!! n-ar fi fost, nu s-ar povesti."}
-#sp = SentencePiece(model=model_sp_path, field="text")
-#doc = sp.do(doc)
-#model_lm_path = "data/lm_sp/ro.arpa.bin"
-#lm = SentenceLM(model=model_lm_path, field="tokenized")
-#ret = lm.do(doc)
-#print(ret)
 
 def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path):
     tok_field="tokenized"
