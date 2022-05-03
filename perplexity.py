@@ -123,7 +123,7 @@ def should_keep_sentence_gaussian(sentence, perplexity, factor=0.78, boundaries=
 
     return rng.uniform() < probability
 
-def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path):
+def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path, keep_jsons: bool=False):
     tok_field="tokenized"
     pp_field = "perplexity"
     sp = SentencePiece(model=model_sp, field="text")
@@ -141,18 +141,21 @@ def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path):
             dic_sentence = sp.do(dic_sentence)
             pp = lm.do(dic_sentence)
             pp.pop('tokenized', None)
-            val = should_keep_sentence_gaussian(sentence, pp[pp_field])
-            ppp = pp
-            ppp["keep"] = val
-            json_batch.append(ppp)
+            if keep_jsons:
+                val = should_keep_sentence_gaussian(sentence, pp[pp_field])
+                ppp = pp
+                ppp["keep"] = val
+                json_batch.append(ppp)
             batch.append(pp[pp_field])
             if len(batch) >= batch_size:
                 np.array(batch, dtype=np.float32).tofile(out_file)
                 batch = []
         if len(batch) > 0:
             np.array(batch, dtype=np.float32).tofile(out_file)
-    with open('jsons_files.json', 'w') as fout:
-        json.dump(json_batch, fout,  sort_keys=True, indent=4,)
+    if keep_jsons:
+        with open('jsons_files.json', 'w') as fout:
+            json.dump(json_batch, fout,  sort_keys=True, indent=4)
+
 
 
 
