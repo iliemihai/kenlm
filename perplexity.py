@@ -140,8 +140,8 @@ def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path, 
             dic_sentence = {"text": sentence}
             dic_sentence = sp.do(dic_sentence)
             pp = lm.do(dic_sentence)
-            pp.pop('tokenized', None)
             if keep_jsons:
+                pp.pop('tokenized', None)
                 val = should_keep_sentence_gaussian(sentence, pp[pp_field])
                 ppp = pp
                 ppp["keep"] = val
