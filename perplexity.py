@@ -106,6 +106,22 @@ class SentenceLM(DocLM):
         document[self.output_field] = pp(log_score, length)
 
         return document#"\n".join(sentences)
+rng = default_rng(42)
+
+def should_keep_sentence_gaussian(sentence, perplexity, factor=0.78, boundaries=None):
+    if boundaries is None:
+        boundaries = [536394.99320948, 662247.50212365, 919250.87225178]
+    if perplexity <= boundaries[0]:
+        quartile_range = boundaries[0]
+    elif boundaries[0] < perplexity < boundaries[1]:
+        quartile_range = boundaries[1] - boundaries[0]
+    elif boundaries[1] < perplexity < boundaries[2]:
+        quartile_range = boundaries[2] - boundaries[1]
+    elif perplexity >= boundaries[2]:
+        quartile_range = 10 * boundaries[2]
+    probability = factor / quartile_range
+
+    return rng.uniform() < probability
 
 def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path):
     tok_field="tokenized"
@@ -115,19 +131,30 @@ def perplexity_to_bin(file: Path, output: Path, model_lm: Path, model_sp: Path):
     batch_size = 100000
     i = 0
     batch = []
+    json_batch = []
     in_file =  open(file, "r")
     out_file = open(output, "wb")
-    for sentence in in_file.readlines():
-        i += 1
-        dic_sentence = {"text": sentence}
-        dic_sentence = sp.do(dic_sentence)
-        pp = lm.do(dic_sentence)[pp_field]
-        batch.append(pp)
-        if len(batch) >= batch_size:
+    for sentence in tqdm(in_file.readlines()):
+        if sentence != "\n":
+            i += 1
+            dic_sentence = {"text": sentence}
+            dic_sentence = sp.do(dic_sentence)
+            pp = lm.do(dic_sentence)
+            pp.pop('tokenized', None)
+            val = should_keep_sentence_gaussian(sentence, pp[pp_field])
+            ppp = pp
+            ppp["keep"] = val
+            json_batch.append(ppp)
+            batch.append(pp[pp_field])
+            if len(batch) >= batch_size:
+                np.array(batch, dtype=np.float32).tofile(out_file)
+                batch = []
+        if len(batch) > 0:
             np.array(batch, dtype=np.float32).tofile(out_file)
-            batch = []
-    if len(batch) > 0:
-        np.array(batch, dtype=np.float32).tofile(out_file)
+    with open('jsons_files.json', 'w') as fout:
+        json.dump(json_batch, fout,  sort_keys=True, indent=4,)
+
+
 
 
 if __name__ == "__main__":
